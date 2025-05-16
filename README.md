@@ -1,6 +1,6 @@
 # Lensa Bahasa - API Backend
 
-Selamat datang di dokumentasi API Backend untuk Lensa Bahasa, sebuah aplikasi pembelajaran bahasa Inggris berbasis AI untuk pemuda Indonesia. API ini menyediakan fungsionalitas inti yang ditenagai oleh Azure AI Services.
+Selamat datang di dokumentasi API Backend untuk Lensa Bahasa, sebuah aplikasi pembelajaran bahasa Inggris berbasis AI untuk pemuda Indonesia. API ini menyediakan fungsionalitas inti yang ditenagai oleh Azure AI Services untuk mendukung pengalaman belajar yang interaktif dan personal.
 
 **API ini telah di-deploy dan dapat diakses melalui Azure Function App.**
 
@@ -12,41 +12,42 @@ Selamat datang di dokumentasi API Backend untuk Lensa Bahasa, sebuah aplikasi pe
   - [2. Arsitektur Backend](#2-arsitektur-backend)
   - [3. Prasyarat Penggunaan API](#3-prasyarat-penggunaan-api)
   - [4. Endpoint API](#4-endpoint-api)
-    - [4.1 Health Check API](#41-health-check-api)
+    - [4.1 Status API (Health Check)](#41-status-api-health-check)
     - [4.2 Deteksi Objek Visual](#42-deteksi-objek-visual)
     - [4.3 Dapatkan Detail Objek Visual (dengan OpenAI)](#43-dapatkan-detail-objek-visual-dengan-openai)
-    - [4.4 Konversi Teks ke Audio (Text-to-Speech)](#44-konversi-teks-ke-audio-text-to-speech)
-    - [4.5 Generasi Pelajaran Situasional (dengan OpenAI) *(Baru Ditambahkan)*](#45-generasi-pelajaran-situasional-dengan-openai-baru-ditambahkan)
+    - [4.4 Generasi Pelajaran Situasional (dengan OpenAI)](#44-generasi-pelajaran-situasional-dengan-openai)
+    - [4.5 Konversi Teks ke Audio (Text-to-Speech)](#45-konversi-teks-ke-audio-text-to-speech)
+    - [4.6 Penilaian Pelafalan (Pronunciation Assessment)](#46-penilaian-pelafalan-pronunciation-assessment)
   - [5. Contoh Penggunaan dengan cURL](#5-contoh-penggunaan-dengan-curl)
   - [6. Struktur Respons](#6-struktur-respons)
   - [7. Catatan Tambahan](#7-catatan-tambahan)
 
 ## 1. Deskripsi Proyek
 
-Lensa Bahasa bertujuan untuk memberdayakan pemuda Indonesia dengan keterampilan komunikasi bahasa Inggris yang praktis, kontekstual, dan personal. Backend API ini mendukung fitur-fitur seperti kamus visual interaktif, pelajaran situasional dinamis, dan output audio.
+Lensa Bahasa bertujuan untuk memberdayakan pemuda Indonesia dengan keterampilan komunikasi bahasa Inggris yang praktis, kontekstual, dan personal. Backend API ini mendukung fitur-fitur seperti kamus visual interaktif, pelajaran situasional dinamis, output audio, dan umpan balik pelafalan.
 
 ## 2. Arsitektur Backend
 
 *   **Platform:** Azure Functions (Serverless, Python)
 *   **Layanan AI Utama:**
     *   Azure AI Vision (untuk deteksi objek)
-    *   Azure OpenAI Service (GPT-4.1 atau setara, untuk analisis gambar objek, generasi teks deskriptif, dan generasi konten pelajaran)
-    *   Azure AI Speech (Text-to-Speech untuk generasi audio)
+    *   Azure OpenAI Service (GPT-4.1 atau setara, untuk analisis gambar objek, generasi teks deskriptif, dan generasi pelajaran situasional)
+    *   Azure AI Speech (Text-to-Speech untuk generasi audio, Speech-to-Text & Pronunciation Assessment untuk penilaian pelafalan)
 *   **Konfigurasi & Rahasia:** Dikelola melalui Azure Key Vault dan Application Settings di Azure Function App.
 
 ## 3. Prasyarat Penggunaan API
 
 *   **URL Basis API:** `https://lensabahasa-api.azurewebsites.net/api` (Ganti `lensabahasa-api` dengan nama Function App Anda jika berbeda).
 *   **Alat Pengujian API:** Postman, cURL, atau klien HTTP lainnya.
-*   Tidak ada kunci API khusus yang diperlukan untuk memanggil endpoint ini saat ini (otorisasi diatur ke `Anonymous`).
+*   Tidak ada kunci API khusus yang diperlukan untuk memanggil endpoint ini saat ini (otorisasi diatur ke `Anonymous`). Ini mungkin berubah di masa depan.
 
 ## 4. Endpoint API
 
 Berikut adalah detail untuk setiap endpoint yang tersedia:
 
-### 4.1 Health Check API
+### 4.1 Status API (Health Check)
 
-Endpoint ini menyediakan status dasar API.
+Menyediakan status dasar API, versi, dan pesan selamat datang.
 
 *   **URL:** `/health`
 *   **URL Lengkap:** `https://lensabahasa-api.azurewebsites.net/api/health`
@@ -64,13 +65,13 @@ Endpoint ini menyediakan status dasar API.
 
 ### 4.2 Deteksi Objek Visual
 
-Endpoint ini menerima gambar dan mengembalikan daftar objek yang terdeteksi.
+Menerima gambar dan mengembalikan daftar objek yang terdeteksi.
 
 *   **URL:** `/visual/detect-objects`
 *   **URL Lengkap:** `https://lensabahasa-api.azurewebsites.net/api/visual/detect-objects`
 *   **Metode:** `POST`
 *   **Request Body:** `multipart/form-data`
-    *   **Field:** `image` (file)
+    *   **Field:** `image` (file: JPEG, PNG, dll.)
 *   **Respons Sukses (200 OK):**
     ```json
     [
@@ -90,20 +91,60 @@ Menerima gambar objek yang sudah di-crop dan mengembalikan detail deskriptif bil
 *   **URL Lengkap:** `https://lensabahasa-api.azurewebsites.net/api/visual/get-object-details`
 *   **Metode:** `POST`
 *   **Request Body:** `multipart/form-data`
-    *   **Field:** `image` (file), `targetLanguage` (opsional, teks, default: `en`), `sourceLanguage` (opsional, teks, default: `id`)
+    *   **Field:**
+        *   `image`: (file) Gambar objek yang sudah di-crop.
+        *   `targetLanguage` (opsional, teks, default: `en`): Kode bahasa target (misalnya, `en`, `id`).
+        *   `sourceLanguage` (opsional, teks, default: `id`): Kode bahasa sumber untuk terjemahan.
 *   **Respons Sukses (200 OK):**
     ```json
     {
         "objectName": { "en": "Smartphone", "id": "Ponsel pintar" },
         "description": { "en": "A modern smartphone...", "id": "Ponsel pintar modern..." },
-        "exampleSentences": [ { "en": "I use my smartphone daily.", "id": "Saya menggunakan ponsel pintar saya setiap hari." } ],
+        "exampleSentences": [ { "en": "I use my smartphone daily.", "id": "Saya menggunakan ponsel pintar setiap hari." } ],
         "relatedAdjectives": [ { "en": "smart", "id": "pintar" } ]
     }
     ```
 
-### 4.4 Konversi Teks ke Audio (Text-to-Speech)
+### 4.4 Generasi Pelajaran Situasional (dengan OpenAI)
 
-Menerima teks dan kode bahasa, mengembalikan data audio MP3.
+Menerima deskripsi skenario dan menghasilkan konten pembelajaran bilingual (kosakata, frasa, tips grammar).
+
+*   **URL:** `/lessons/generate-situational`
+*   **URL Lengkap:** `https://lensabahasa-api.azurewebsites.net/api/lessons/generate-situational`
+*   **Metode:** `POST`
+*   **Request Headers:** `Content-Type: application/json`
+*   **Request Body (JSON):**
+    ```json
+    {
+      "scenarioDescription": "I want to order food at a fancy restaurant for a birthday dinner.",
+      "userNativeLanguageCode": "id",     // Default 'id'
+      "learningLanguageCode": "en",     // Default 'en'
+      "userProficiencyLevel": "intermediate" // Default 'intermediate', opsi: 'beginner', 'intermediate', 'advanced'
+    }
+    ```
+*   **Respons Sukses (200 OK):**
+    ```json
+    {
+        "scenarioTitle": { "en": "Ordering Food at a Fancy Restaurant", "id": "Memesan Makanan di Restoran Mewah" },
+        "vocabulary": [
+            { "term": { "en": "Reservation", "id": "Reservasi" } },
+            { "term": { "en": "Appetizer", "id": "Makanan Pembuka" } }
+        ],
+        "keyPhrases": [
+            { "phrase": { "en": "I would like to make a reservation.", "id": "Saya ingin membuat reservasi." } }
+        ],
+        "grammarTips": [
+            {
+                "tip": { "en": "Use polite forms like 'Could I...' or 'May I...'", "id": "Gunakan bentuk sopan seperti 'Bisakah saya...' atau 'Bolehkah saya...'" },
+                "example": { "en": "Could I see the menu, please?", "id": "Bisakah saya melihat menunya?" }
+            }
+        ]
+    }
+    ```
+
+### 4.5 Konversi Teks ke Audio (Text-to-Speech)
+
+Menerima teks dan kode bahasa, mengembalikan data audio (MP3).
 
 *   **URL:** `/audio/text-to-speech`
 *   **URL Lengkap:** `https://lensabahasa-api.azurewebsites.net/api/audio/text-to-speech`
@@ -112,113 +153,86 @@ Menerima teks dan kode bahasa, mengembalikan data audio MP3.
 *   **Request Body (JSON):**
     ```json
     {
-      "text": "Hello Lensa Bahasa",
+      "text": "Hello Language Lens",
       "languageCode": "en-US",
-      "voiceName": "en-US-AvaNeural" // Opsional
+      "voiceName": "en-US-AvaMultilingualNeural" // Opsional
     }
     ```
 *   **Respons Sukses (200 OK):**
     *   **Content-Type:** `audio/mpeg`
-    *   **Body:** Data biner audio MP3.
+    *   **Body:** Data biner dari file audio MP3.
 
-### 4.5 Generasi Pelajaran Situasional (dengan OpenAI) *(Baru Ditambahkan)*
+### 4.6 Penilaian Pelafalan (Pronunciation Assessment)
 
-Endpoint ini menerima deskripsi skenario dari pengguna dan menghasilkan konten pembelajaran bilingual (kosakata, frasa kunci, tips grammar) secara dinamis menggunakan Azure OpenAI.
+Menerima rekaman audio pengguna, teks referensi, dan bahasa, lalu memberikan umpan balik pelafalan.
 
-*   **URL:** `/lessons/situational`
-*   **URL Lengkap:** `https://lensabahasa-api.azurewebsites.net/api/lessons/situational`
+*   **URL:** `/audio/assess-pronunciation`
+*   **URL Lengkap:** `https://lensabahasa-api.azurewebsites.net/api/audio/assess-pronunciation`
 *   **Metode:** `POST`
-*   **Request Headers:**
-    *   `Content-Type: application/json`
-*   **Request Body (JSON):**
-    ```json
-    {
-      "scenarioDescription": "Saya mau pergi ke supermarket untuk membeli buah-buahan dan sayuran.",
-      "userNativeLanguageCode": "id", 
-      "learningLanguageCode": "en", 
-      "userProficiencyLevel": "beginner" // Opsional, default: "intermediate"
-    }
-    ```
-    *   `scenarioDescription` (string, wajib): Deskripsi situasi oleh pengguna.
-    *   `userNativeLanguageCode` (string, wajib, default `id`): Kode bahasa ibu pengguna (misalnya, "id", "en").
-    *   `learningLanguageCode` (string, wajib, default `en`): Kode bahasa yang ingin dipelajari (misalnya, "en", "id").
-    *   `userProficiencyLevel` (string, opsional, default `intermediate`): Tingkat kemahiran pengguna ("beginner", "intermediate", "advanced").
-
+*   **Request Body:** `multipart/form-data`
+    *   **Field:**
+        *   `audio`: (file) File audio rekaman suara pengguna (WAV direkomendasikan, MP3 mungkin didukung).
+        *   `referenceText`: (teks) Teks yang seharusnya diucapkan.
+        *   `languageCode`: (teks) Kode bahasa (misalnya, `en-US`).
+        *   `gradingSystem` (opsional, teks, default: `HundredMark`): Sistem penilaian (`HundredMark`, `FivePoint`).
+        *   `granularity` (opsional, teks, default: `Phoneme`): Detail umpan balik (`Phoneme`, `Word`, `FullText`).
 *   **Contoh Request (menggunakan cURL):**
     ```bash
     curl -X POST \
-      https://lensabahasa-api.azurewebsites.net/api/lessons/situational \
-      -H "Content-Type: application/json" \
-      -d '{
-            "scenarioDescription": "I need to book a hotel room for 3 nights.",
-            "userNativeLanguageCode": "id",
-            "learningLanguageCode": "en",
-            "userProficiencyLevel": "intermediate"
-          }'
+      https://lensabahasa-api.azurewebsites.net/api/audio/assess-pronunciation \
+      -F "audio=@/path/to/your/speech.wav" \
+      -F "referenceText=Hello world" \
+      -F "languageCode=en-US"
     ```
-
 *   **Respons Sukses (200 OK):**
-    Objek JSON berisi materi pelajaran yang terstruktur.
+    Objek JSON berisi skor dan detail penilaian.
     ```json
     {
-        "scenarioTitle": {
-            "en": "Booking a Hotel Room",
-            "id": "Memesan Kamar Hotel"
-        },
-        "vocabulary": [
+        "recognizedText": "Hello world",
+        "accuracyScore": 85.0,
+        "pronunciationScore": 78.0,
+        "completenessScore": 100.0,
+        "fluencyScore": 70.0,
+        "prosodyScore": null, // Mungkin null
+        "words": [
             {
-                "term": { "en": "Reservation", "id": "Reservasi" }
+                "word": "Hello",
+                "accuracyScore": 90.0,
+                "errorType": "None", // Bisa "Mispronunciation", "Omission", "Insertion"
+                "phonemes": [
+                    { "phoneme": "h", "accuracyScore": 95.0 },
+                    { "phoneme": "eh", "accuracyScore": 80.0 },
+                    // ... fonem lainnya
+                ]
             },
-            {
-                "term": { "en": "Availability", "id": "Ketersediaan" }
-            }
-            // ... lebih banyak kosakata
-        ],
-        "keyPhrases": [
-            {
-                "phrase": { "en": "I would like to make a reservation.", "id": "Saya ingin membuat reservasi." }
-            },
-            {
-                "phrase": { "en": "Do you have any rooms available?", "id": "Apakah Anda memiliki kamar yang tersedia?" }
-            }
-            // ... lebih banyak frasa kunci
-        ],
-        "grammarTips": [
-            {
-                "tip": { 
-                    "en": "Use 'would like to' for polite requests.", 
-                    "id": "Gunakan 'would like to' untuk permintaan yang sopan." 
-                },
-                "example": { 
-                    "en": "I would like to book a single room.", 
-                    "id": "Saya ingin memesan kamar untuk satu orang." 
-                }
-            }
-            // ... tips grammar lainnya
+            // ... kata lainnya
         ]
     }
     ```
-    *(Struktur detail di atas adalah contoh. Output aktual mungkin sedikit bervariasi tergantung respons AI).*
 
 *   **Respons Error:**
-    *   `400 Bad Request`: Jika JSON input tidak valid atau parameter wajib hilang.
-    *   `500 Internal Server Error`: Jika ada masalah di sisi server atau dengan panggilan ke OpenAI.
+    *   `400 Bad Request`: Input tidak valid.
+    *   `500 Internal Server Error`: Masalah di sisi server atau layanan Speech.
 
 ## 5. Contoh Penggunaan dengan cURL
 
-Lihat contoh cURL di bawah setiap deskripsi endpoint di atas. Pastikan untuk mengganti URL basis jika nama Function App Anda berbeda dan sesuaikan path file atau data JSON.
+Contoh cURL spesifik disediakan di bawah setiap deskripsi endpoint di atas. Ingat untuk:
+*   Mengganti URL basis jika nama Function App Anda berbeda.
+*   Mengganti `/path/to/your/file` dengan path file lokal yang benar saat mengunggah file.
+*   Menyimpan output audio dari endpoint TTS ke file (misalnya, menggunakan `--output audio.mp3` di cURL).
 
 ## 6. Struktur Respons
 
-*   Untuk endpoint yang mengembalikan data JSON, struktur detail telah dijelaskan di bawah masing-masing endpoint. Output dapat bervariasi tergantung pada input dan respons dari layanan AI.
-*   Untuk endpoint TTS, respons adalah data audio biner.
+Struktur JSON respons detail telah dijelaskan untuk setiap endpoint yang mengembalikan JSON. Endpoint TTS mengembalikan data audio biner.
 
 ## 7. Catatan Tambahan
 
-*   **Status Proyek:** Backend ini masih dalam tahap pengembangan aktif (MVP untuk Hackathon). Fitur dan endpoint baru akan ditambahkan.
-*   **Keamanan:** Endpoint saat ini menggunakan otorisasi `Anonymous`.
-*   **Prompt Engineering:** Kualitas output dari endpoint yang menggunakan Azure OpenAI (`/visual/get-object-details`, `/lessons/situational`) sangat bergantung pada *prompt engineering* dan dapat ditingkatkan lebih lanjut.
-*   **Batasan Layanan AI:** Harap perhatikan batasan penggunaan dan biaya dari layanan Azure AI yang mendasarinya.
+*   **Status Proyek:** Backend ini aktif dikembangkan sebagai bagian dari MVP Lensa Bahasa.
+*   **Keamanan:** Endpoint saat ini `Anonymous`. Keamanan akan ditingkatkan.
+*   **Penanganan Error:** Pesan error dasar disediakan. Log server di Azure Application Insights dapat memberikan detail lebih lanjut.
+*   **Batasan Layanan Azure:** Setiap layanan Azure yang digunakan (AI Vision, OpenAI, AI Speech) memiliki batasan penggunaan dan harga sendiri sesuai dengan tier yang dipilih.
+*   **Repositori Kode Frontend (jika ada):** [Link ke repo frontend Anda]
+*   **Informasi Kontak/Kontribusi:** [Cara berkontribusi atau menghubungi Anda]
 
 ---
-Untuk pertanyaan atau masalah, silakan buka *issue* di repositori GitHub Anda (jika ini adalah proyek publik).
+Untuk pertanyaan atau masalah, silakan buka *issue* di repositori GitHub ini (jika Anda membuatnya publik): `https://github.com/dzakwanalifi/LensaBahasa-API-Trial`
