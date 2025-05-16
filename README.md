@@ -231,8 +231,6 @@ Struktur JSON respons detail telah dijelaskan untuk setiap endpoint yang mengemb
 *   **Keamanan:** Endpoint saat ini `Anonymous`. Keamanan akan ditingkatkan.
 *   **Penanganan Error:** Pesan error dasar disediakan. Log server di Azure Application Insights dapat memberikan detail lebih lanjut.
 *   **Batasan Layanan Azure:** Setiap layanan Azure yang digunakan (AI Vision, OpenAI, AI Speech) memiliki batasan penggunaan dan harga sendiri sesuai dengan tier yang dipilih.
-*   **Repositori Kode Frontend (jika ada):** [Link ke repo frontend Anda]
-*   **Informasi Kontak/Kontribusi:** [Cara berkontribusi atau menghubungi Anda]
 
 ---
 Untuk pertanyaan atau masalah, silakan buka *issue* di repositori GitHub ini (jika Anda membuatnya publik): `https://github.com/dzakwanalifi/LensaBahasa-API-Trial`
