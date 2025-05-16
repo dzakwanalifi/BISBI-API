@@ -58,7 +58,7 @@ Endpoint ini menyediakan status dasar API.
       "message": "Welcome to Lensa Bahasa API! All systems operational.",
       "version": "0.1.0-mvp",
       "timestamp": "2025-05-16T08:00:00Z",
-      "documentation": "https://github.com/your-username/lensa-bahasa-repo/blob/main/README.md"
+      "documentation": "https://github.com/dzakwanalifi/LensaBahasa-API-Trial/blob/master/README.md"
     }
     ```
 
