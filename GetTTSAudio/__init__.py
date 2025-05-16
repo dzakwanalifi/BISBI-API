@@ -48,7 +48,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             if language_code.lower() == "id-id":
                 speech_config.speech_synthesis_voice_name = "id-ID-ArdiNeural"
             elif language_code.lower() == "en-us":
-                speech_config.speech_synthesis_voice_name = "en-US-AvaNeural"
+                speech_config.speech_synthesis_voice_name = "en-US-AvaMultilingualNeural"
             # Tambahkan default lain jika perlu
 
         # Atur format output audio (misalnya, MP3)
