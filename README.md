@@ -109,8 +109,8 @@ Menerima gambar objek yang sudah di-crop dan mengembalikan detail deskriptif bil
 
 Menerima deskripsi skenario dan menghasilkan konten pembelajaran bilingual (kosakata, frasa, tips grammar).
 
-*   **URL:** `/lessons/generate-situational`
-*   **URL Lengkap:** `https://lensabahasa-api.azurewebsites.net/api/lessons/generate-situational`
+*   **URL:** `/lessons/situational`
+*   **URL Lengkap:** `https://lensabahasa-api.azurewebsites.net/api/lessons/situational`
 *   **Metode:** `POST`
 *   **Request Headers:** `Content-Type: application/json`
 *   **Request Body (JSON):**
