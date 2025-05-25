@@ -119,8 +119,8 @@ Adjust the complexity and depth of the content according to this proficiency lev
 
         # 6. Proses respons dari Azure OpenAI
         if response.choices and len(response.choices) > 0:
-            assistant_message = response.choices.message
-            if assistant_message.content:
+            assistant_message = response.choices[0].message # Access the first choice's message
+            if assistant_message and assistant_message.content:
                 try:
                     json_output_str = assistant_message.content.strip()
                     # Hapus ```json ... ``` jika model menambahkannya

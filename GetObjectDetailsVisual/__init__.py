@@ -18,7 +18,11 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
         if not all([openai_endpoint, openai_key, openai_deployment_name]):
             logging.error("Konfigurasi Azure OpenAI tidak lengkap.")
-            return func.HttpResponse("Error: Server configuration missing for OpenAI.", status_code=500)
+            return func.HttpResponse(
+                json.dumps({"error": "Server configuration missing for OpenAI."}),
+                mimetype="application/json",
+                status_code=500
+            )
 
         # 2. Dapatkan file gambar dan parameter bahasa dari request
         image_file = req.files.get('image')
@@ -34,7 +38,11 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
         if not image_file:
             logging.warning("Tidak ada file gambar yang diterima.")
-            return func.HttpResponse("Harap unggah file gambar (cropped object) dengan field name 'image'.", status_code=400)
+            return func.HttpResponse(
+                json.dumps({"error": "Harap unggah file gambar (cropped object) dengan field name \'image\'."}),
+                mimetype="application/json",
+                status_code=400
+            )
         
         # 3. Baca dan encode gambar ke base64
         image_bytes = image_file.read()
@@ -98,7 +106,11 @@ If you cannot identify the object or provide information, return an empty JSON o
             logging.error(f"Error calling Azure OpenAI: {str(e_openai)}")
             import traceback
             logging.error(traceback.format_exc())
-            return func.HttpResponse("Error communicating with AI model.", status_code=500)
+            return func.HttpResponse(
+                json.dumps({"error": "Error communicating with AI model.", "details": str(e_openai)}),
+                mimetype="application/json",
+                status_code=500
+            )
         
         # 7. Proses respons dari Azure OpenAI
         if response.choices and len(response.choices) > 0:
@@ -132,19 +144,39 @@ If you cannot identify the object or provide information, return an empty JSON o
                 except json.JSONDecodeError as json_err:
                     logging.error(f"Gagal mem-parse JSON dari respons OpenAI: {json_err}")
                     logging.error(f"Respons mentah dari OpenAI: {assistant_message.content}")
-                    return func.HttpResponse("AI model returned non-JSON content.", status_code=500)
+                    return func.HttpResponse(
+                        json.dumps({"error": "AI model returned non-JSON content or malformed JSON."}),
+                        mimetype="application/json",
+                        status_code=500
+                    )
             else:
                 logging.warning("Respons OpenAI tidak memiliki konten.")
-                return func.HttpResponse("AI model returned no content.", status_code=500)
+                return func.HttpResponse(
+                    json.dumps({"error": "AI model returned no content."}),
+                    mimetype="application/json",
+                    status_code=500
+                )
         else:
             logging.warning("Respons OpenAI tidak memiliki choices.")
-            return func.HttpResponse("AI model returned no choices.", status_code=500)
+            return func.HttpResponse(
+                json.dumps({"error": "AI model returned no choices."}),
+                mimetype="application/json",
+                status_code=500
+            )
 
     except ValueError as ve:
         logging.error(f"ValueError: {str(ve)}")
-        return func.HttpResponse(f"Invalid input: {str(ve)}", status_code=400)
+        return func.HttpResponse(
+            json.dumps({"error": f"Invalid input: {str(ve)}"}),
+            mimetype="application/json",
+            status_code=400
+        )
     except Exception as e:
         logging.error(f"Terjadi kesalahan internal: {str(e)}")
         import traceback
         logging.error(traceback.format_exc())
-        return func.HttpResponse("Terjadi kesalahan pada server saat memproses detail objek.", status_code=500)
+        return func.HttpResponse(
+            json.dumps({"error": "Terjadi kesalahan pada server saat memproses detail objek.", "details": str(e)}),
+            mimetype="application/json",
+            status_code=500
+        )

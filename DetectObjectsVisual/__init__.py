@@ -50,15 +50,13 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             logging.info(f"Ditemukan {len(result.objects.list)} objek.")
             for detected_object in result.objects.list: # Iterasi langsung objek DetectedObject
                 obj_name = "Unknown"
-                # Confidence objek keseluruhan, bukan per tag spesifik
-                obj_confidence = detected_object.confidence
+                obj_confidence = 0.0  # Default confidence
 
-                # Ambil nama dari tag pertama dengan confidence tertinggi, atau gabungkan
+                # Ambil nama dan confidence dari tag pertama jika ada
                 if detected_object.tags:
-                    # Anda bisa memilih tag pertama atau yang paling relevan
-                    obj_name = detected_object.tags[0].name
-                    # Jika ingin confidence dari tag pertama:
-                    # obj_confidence_tag = detected_object.tags[0].confidence
+                    primary_tag = detected_object.tags[0]
+                    obj_name = primary_tag.name
+                    obj_confidence = primary_tag.confidence # Confidence diambil dari tag
 
                 rect_x, rect_y, rect_w, rect_h = 0, 0, 0, 0
                 if detected_object.bounding_box:
