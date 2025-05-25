@@ -18,7 +18,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             "message": "Welcome to Lensa Bahasa API! All systems operational.",
             "version": API_VERSION,
             "timestamp": current_timestamp,
-            "documentation": "https://github.com/dzakwanalifi/LensaBahasa-API-Trial/blob/master/README.md" # Ganti dengan URL README Anda
+            "documentation": "https://github.com/dzakwanalifi/BISBI-API/blob/master/README.md" # Ganti dengan URL README Anda
         }
 
         return func.HttpResponse(

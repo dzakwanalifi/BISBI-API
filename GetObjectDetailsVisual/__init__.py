@@ -99,7 +99,7 @@ If you cannot identify the object or provide information, return an empty JSON o
             import traceback
             logging.error(traceback.format_exc())
             return func.HttpResponse("Error communicating with AI model.", status_code=500)
-
+        
         # 7. Proses respons dari Azure OpenAI
         if response.choices and len(response.choices) > 0:
             assistant_message = response.choices[0].message
@@ -113,14 +113,15 @@ If you cannot identify the object or provide information, return an empty JSON o
                     if json_output_str.endswith("```"):
                         json_output_str = json_output_str[:-3]
                     
+                    json_output_str = json_output_str.strip()
                     parsed_json = json.loads(json_output_str)
                     logging.info(f"Respon JSON dari OpenAI berhasil di-parse.")
                     
                     # (Opsional) Validasi sederhana apakah struktur utama ada
-                    if not all(k in parsed_json for k in ["objectName", "description", "exampleSentences", "relatedAdjectives"]):
-                        logging.warning(f"Respon JSON dari OpenAI tidak memiliki semua kunci yang diharapkan: {parsed_json}")
-                        # Anda bisa memilih untuk tetap mengembalikan apa yang ada, atau error
-                        # return func.HttpResponse("AI model returned an unexpected JSON structure.", status_code=500)
+                    # if not all(k in parsed_json for k in []):
+                    #     logging.warning(f"Respon JSON dari OpenAI tidak memiliki semua kunci yang diharapkan: {parsed_json}")
+                    #     # Anda bisa memilih untuk tetap mengembalikan apa yang ada, atau error
+                    #     # return func.HttpResponse("AI model returned an unexpected JSON structure.", status_code=500)
 
 
                     return func.HttpResponse(

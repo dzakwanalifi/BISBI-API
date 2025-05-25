@@ -7,7 +7,6 @@ import azure.cognitiveservices.speech as speechsdk
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request for PronunciationAssessmentFunc.')
-    temp_file_path = None # Inisialisasi agar ada di scope finally
 
     try:
         speech_key = os.environ.get("AZURE_AI_SERVICES_KEY")
@@ -99,9 +98,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             if pronunciation_result_json_str:
                 pronunciation_details = json.loads(pronunciation_result_json_str)
                 logging.info("Berhasil mendapatkan detail penilaian pelafalan.")
-                # logging.info(f"JSON Mentah Parsed: {json.dumps(pronunciation_details, indent=2)}") # Log JSON yang sudah diparsing untuk verifikasi
-
-                # Inisialisasi response_data
+                # logging.info(f"JSON Mentah Parsed: {json.dumps(pronunciation_details, indent=2)}") # Log JSON yang sudah diparsing untuk verifikasi                # Inisialisasi response_data
                 response_data = {
                     "recognizedText": pronunciation_details.get("DisplayText"),
                     "accuracyScore": None,
@@ -110,26 +107,25 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                     "fluencyScore": None,
                     "prosodyScore": None, # Mungkin tidak selalu ada
                     "words": []
-                }
-
-                # Skor utama ada di dalam NBest -> elemen pertama -> PronunciationAssessment
+                }                # Skor utama ada di dalam NBest -> elemen pertama -> PronunciationAssessment
                 if "NBest" in pronunciation_details and \
-                   isinstance(pronunciation_details["NBest"], list) and \
+                   isinstance(pronunciation_details.get("NBest"), list) and \
                    len(pronunciation_details["NBest"]) > 0:
                     
-                    best_recognition_candidate = pronunciation_details["NBest"][0]
+                    best_recognition_candidate = pronunciation_details["NBest"][0] # Ambil kandidat pertama
                     
+                    # Ambil recognizedText dari NBest jika lebih akurat
+                    response_data["recognizedText"] = best_recognition_candidate.get("Display", response_data["recognizedText"])
+
                     if "PronunciationAssessment" in best_recognition_candidate:
                         pa_overall_scores = best_recognition_candidate["PronunciationAssessment"]
                         response_data["accuracyScore"] = pa_overall_scores.get("AccuracyScore")
                         response_data["pronunciationScore"] = pa_overall_scores.get("PronScore")
                         response_data["completenessScore"] = pa_overall_scores.get("CompletenessScore")
                         response_data["fluencyScore"] = pa_overall_scores.get("FluencyScore")
-                        response_data["prosodyScore"] = pa_overall_scores.get("ProsodyScore") # Mungkin null
-
-                    # Proses kata-kata dari hasil NBest terbaik
+                        response_data["prosodyScore"] = pa_overall_scores.get("ProsodyScore")                    # Proses kata-kata dari hasil NBest terbaik
                     if "Words" in best_recognition_candidate:
-                        for word_info in best_recognition_candidate.get("Words", []):
+                        for word_info in best_recognition_candidate.get("Words", []): # Default ke list kosong
                             word_data = {
                                 "word": word_info.get("Word"),
                                 "accuracyScore": None,
@@ -143,15 +139,22 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                                 word_data["errorType"] = pa_word_details.get("ErrorType", "None") # AMBIL DARI SINI
                             
                             if granularity_str == "Phoneme" and "Phonemes" in word_info:
-                                for p_info in word_info.get("Phonemes", []):
+                                for p_info in word_info.get("Phonemes", []): # Default ke list kosong
                                     phoneme_accuracy = None
-                                    if "PronunciationAssessment" in p_info: # Skor fonem juga di dalam PA-nya sendiri
-                                        phoneme_accuracy = p_info["PronunciationAssessment"].get("AccuracyScore")
+                                    # Skor fonem ada di dalam PronunciationAssessment-nya sendiri di dalam objek fonem
+                                    if "PronunciationAssessment" in p_info:
+                                        pa_phoneme_details = p_info["PronunciationAssessment"]
+                                        phoneme_accuracy = pa_phoneme_details.get("AccuracyScore")
+
                                     word_data["phonemes"].append({
                                         "phoneme": p_info.get("Phoneme"),
                                         "accuracyScore": phoneme_accuracy
                                     })
                             response_data["words"].append(word_data)
+                    else:
+                        logging.warning("Tidak ada 'Words' dalam NBest candidate.")
+                else:
+                    logging.warning("Tidak ada 'NBest' atau format NBest tidak sesuai dalam hasil Pronunciation Assessment.")
                 
                 return func.HttpResponse(
                     body=json.dumps(response_data),
@@ -189,24 +192,24 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                 json.dumps(response_data),
                 mimetype="application/json", status_code=500
             )
-
     except ValueError as ve: # Untuk req.form atau req.files jika ada masalah
         logging.error(f"ValueError: {str(ve)}")
         return func.HttpResponse(
-            json.dumps({"error": f"Invalid input: {str(ve)}"}),
-            mimetype="application/json", status_code=400
+            body=json.dumps({"error": f"Invalid input: {str(ve)}"}), # Pastikan body di sini juga json.dumps
+            mimetype="application/json",
+            status_code=400
         )
     except Exception as e:
-        logging.error(f"Terjadi kesalahan internal: {str(e)}")
+        logging.error(f"Terjadi kesalahan internal di PronunciationAssessmentFunc: {str(e)}")
         import traceback
         logging.error(traceback.format_exc())
-        # Pastikan response_data ada jika error terjadi sebelum diinisialisasi dengan benar
-        if 'response_data' not in locals():
-            response_data = {"error": "Kesalahan pemrosesan tidak tertangani."}
-        elif not response_data.get("error"): # Jika response_data ada tapi tidak ada error spesifik
-             response_data["error"] = "Terjadi kesalahan pada server saat memproses penilaian pelafalan."
-
+        
+        error_payload = {
+            "error": "Terjadi kesalahan pada server saat memproses penilaian pelafalan.",
+            "details": str(e) # Sertakan detail error jika membantu
+        }
         return func.HttpResponse(
-            json.dumps(response_data), 
-            mimetype="application/json", status_code=500
+            body=json.dumps(error_payload),
+            mimetype="application/json",
+            status_code=500
         )

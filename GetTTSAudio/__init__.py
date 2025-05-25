@@ -16,14 +16,14 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
         if not speech_key or not speech_region:
             logging.error("Konfigurasi Azure AI Speech (key atau region) tidak lengkap.")
-            return func.HttpResponse("Error: Server configuration missing for Speech service.", status_code=500)
+            return func.HttpResponse(json.dumps({"error": "Error: Server configuration missing for Speech service."}), mimetype="application/json", status_code=500)
 
         # 2. Dapatkan input JSON dari request body
         try:
             req_body = req.get_json()
         except ValueError:
             logging.warning("Request body bukan JSON yang valid.")
-            return func.HttpResponse("Harap kirim request body dalam format JSON.", status_code=400)
+            return func.HttpResponse(json.dumps({"error": "Harap kirim request body dalam format JSON."}), mimetype="application/json", status_code=400)
 
         text_to_speak = req_body.get('text')
         language_code = req_body.get('languageCode')
@@ -32,7 +32,8 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         if not text_to_speak or not language_code:
             logging.warning("Parameter 'text' atau 'languageCode' tidak ada di request body.")
             return func.HttpResponse(
-                "Harap sertakan 'text' dan 'languageCode' dalam request body JSON.",
+                json.dumps({"error": "Harap sertakan 'text' dan 'languageCode' dalam request body JSON."}),
+                mimetype="application/json",
                  status_code=400
             )
 

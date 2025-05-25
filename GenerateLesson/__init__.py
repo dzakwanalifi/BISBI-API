@@ -119,19 +119,19 @@ Adjust the complexity and depth of the content according to this proficiency lev
 
         # 6. Proses respons dari Azure OpenAI
         if response.choices and len(response.choices) > 0:
-            assistant_message = response.choices[0].message
+            assistant_message = response.choices.message
             if assistant_message.content:
                 try:
                     json_output_str = assistant_message.content.strip()
                     # Hapus ```json ... ``` jika model menambahkannya
                     if json_output_str.startswith("```json"):
-                        json_output_str = json_output_str[len("```json"):]
-                    if json_output_str.startswith("```"): # Jika hanya ```
-                        json_output_str = json_output_str[len("```"):]
+                        json_output_str = json_output_str[7:]
+                    elif json_output_str.startswith("```"): # Gunakan elif jika ```json tidak ada
+                        json_output_str = json_output_str[3:]
                     if json_output_str.endswith("```"):
-                        json_output_str = json_output_str[:-len("```")]
+                        json_output_str = json_output_str[:-3]
                     
-                    parsed_json = json.loads(json_output_str.strip())
+                    parsed_json = json.loads(json_output_str.strip()) # Penting
                     logging.info("Respon JSON dari OpenAI berhasil di-parse untuk pelajaran situasional.")
                     
                     return func.HttpResponse(
