@@ -1,4 +1,3 @@
-\
 import logging
 
 def calculate_iou(box1, box2):
