@@ -6,12 +6,8 @@ import azure.functions as func
 # Import SDK untuk Azure AI Speech (Text-to-Speech)
 import azure.cognitiveservices.speech as speechsdk
 
-# UBAH DEFINISI FUNGSI main UNTUK MENERIMA user_id
-def main(req: func.HttpRequest, user_id: str = None) -> func.HttpResponse: # Tambahkan user_id opsional
-    if user_id:
-        logging.info(f'Python HTTP trigger function processed a request for GetTTSAudio by user {user_id}.')
-    else:
-        logging.warning('GetTTSAudio accessed without user_id. Auth might not be applied.')
+def main(req: func.HttpRequest) -> func.HttpResponse:
+    logging.info('Python HTTP trigger function processed a request for GetTTSAudio.')
 
     try:
         # 1. Ambil konfigurasi dari environment variables

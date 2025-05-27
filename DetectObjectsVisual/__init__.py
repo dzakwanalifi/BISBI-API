@@ -7,12 +7,8 @@ from azure.ai.vision.imageanalysis import ImageAnalysisClient
 from azure.ai.vision.imageanalysis.models import VisualFeatures, DetectedObject # Impor DetectedObject
 from azure.core.credentials import AzureKeyCredential
 
-# UBAH DEFINISI FUNGSI main UNTUK MENERIMA user_id
-def main(req: func.HttpRequest, user_id: str = None) -> func.HttpResponse: # Tambahkan user_id opsional
-    if user_id:
-        logging.info(f'Python HTTP trigger function processed a request for DetectObjectsVisual by user {user_id}.')
-    else:
-        logging.warning('DetectObjectsVisual accessed without user_id. Auth might not be applied.')
+def main(req: func.HttpRequest) -> func.HttpResponse:
+    logging.info('Python HTTP trigger function processed a request for DetectObjectsVisual.')
 
     try:
         ai_services_endpoint = os.environ.get("AZURE_AI_SERVICES_ENDPOINT")

@@ -5,16 +5,10 @@ import base64 # Untuk encode gambar ke base64
 import azure.functions as func
 
 # Import SDK untuk Azure OpenAI
-from openai import AzureOpenAI
+from openai import AzureOpenAI # Pastikan versi openai >= 1.0.0
 
-# UBAH DEFINISI FUNGSI main UNTUK MENERIMA user_id
-def main(req: func.HttpRequest, user_id: str = None) -> func.HttpResponse: # Tambahkan user_id opsional
-    if user_id:
-        logging.info(f'Python HTTP trigger function processed a request for GetObjectDetailsVisual by user {user_id}.')
-    else:
-        logging.warning('GetObjectDetailsVisual accessed without user_id. Auth might not be applied.')
-        # Anda bisa memutuskan untuk mengembalikan error di sini jika user_id wajib
-        # return func.HttpResponse("Authentication required.", status_code=401)
+def main(req: func.HttpRequest) -> func.HttpResponse:
+    logging.info('Python HTTP trigger function processed a request for GetObjectDetailsVisual.')
 
     try:
         # 1. Ambil konfigurasi dari environment variables

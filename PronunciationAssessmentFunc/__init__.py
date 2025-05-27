@@ -5,25 +5,8 @@ import json
 import azure.functions as func
 import azure.cognitiveservices.speech as speechsdk
 
-# Import AuthError jika Anda ingin menangkapnya secara eksplisit di sini (opsional)
-# from ..auth_utils import AuthError
-
 def main(req: func.HttpRequest) -> func.HttpResponse:
-    # user_id akan disuntik ke req oleh handler di routes.py
-    user_id_from_req = getattr(req, 'user_id_injected', None)
-
-    if user_id_from_req:
-        logging.info(f'Python HTTP trigger function processed a request for PronunciationAssessmentFunc by user {user_id_from_req}.')
-    else:
-        # Ini bisa terjadi jika decorator tidak diterapkan atau gagal, atau jika fungsi dipanggil secara internal tanpa melalui handler yang di-decorate.
-        logging.warning('PronunciationAssessmentFunc accessed without user_id_injected. Auth might not be applied or function called directly.')
-        # Anda bisa memutuskan untuk mengembalikan error di sini jika user_id wajib untuk logika inti fungsi ini.
-        # Contoh:
-        # return func.HttpResponse(
-        #     json.dumps({"code": "authentication_required", "description": "User ID not found in request context."}),
-        #     status_code=401,
-        #     mimetype="application/json"
-        # )
+    logging.info('Python HTTP trigger function processed a request for PronunciationAssessmentFunc.')
 
     try:
         speech_key = os.environ.get("AZURE_AI_SERVICES_KEY")
@@ -212,18 +195,10 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     except ValueError as ve: # Untuk req.form atau req.files jika ada masalah
         logging.error(f"ValueError: {str(ve)}")
         return func.HttpResponse(
-            body=json.dumps({"error": f"Invalid input: {str(ve)}"}),
+            body=json.dumps({"error": f"Invalid input: {str(ve)}"}), # Pastikan body di sini juga json.dumps
             mimetype="application/json",
             status_code=400
         )
-    # Tangkap AuthError secara eksplisit jika perlu, meskipun decorator harusnya sudah handle
-    # except AuthError as ae:
-    #     logging.error(f"AuthError in PronunciationAssessmentFunc main: {ae.error}")
-    #     return func.HttpResponse(
-    #         json.dumps(ae.error),
-    #         status_code=ae.status_code,
-    #         mimetype="application/json"
-    #     )
     except Exception as e:
         logging.error(f"Terjadi kesalahan internal di PronunciationAssessmentFunc: {str(e)}")
         import traceback

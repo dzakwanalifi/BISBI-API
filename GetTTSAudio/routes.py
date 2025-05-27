@@ -2,19 +2,10 @@ import azure.functions as func
 import logging
 from . import main as get_tts_audio_main
 
-# TAMBAHKAN IMPORT INI (sesuaikan path jika perlu)
-try:
-    from ..auth_utils import require_auth
-except ImportError:
-    from auth_utils import require_auth
-
 # Create Blueprint
 bp = func.Blueprint()
 
-# TERAPKAN DECORATOR @require_auth DI SINI
-@bp.route(route="GetTTSAudio", auth_level=func.AuthLevel.ANONYMOUS, methods=["POST"]) # Ubah auth_level
-@require_auth # Decorator diterapkan di sini
-def GetTTSAudio_handler(req: func.HttpRequest, user_id: str) -> func.HttpResponse: # Tambahkan user_id
-    logging.info(f"Blueprint: Routing to GetTTSAudio for user {user_id}")
-    # Teruskan user_id ke fungsi main
-    return get_tts_audio_main(req, user_id=user_id)
+@bp.route(route="GetTTSAudio", auth_level=func.AuthLevel.FUNCTION, methods=["POST"])
+def GetTTSAudio_handler(req: func.HttpRequest) -> func.HttpResponse:
+    logging.info("Blueprint: Routing to GetTTSAudio")
+    return get_tts_audio_main(req)
