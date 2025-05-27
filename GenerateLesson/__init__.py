@@ -5,6 +5,9 @@ import azure.functions as func
 
 # Import SDK untuk Azure OpenAI
 from openai import AzureOpenAI # Pastikan versi openai >= 1.0.0
+from azure.ai.contentsafety.models import AnalyzeTextOptions, TextCategory # Import untuk Content Safety
+from azure.ai.contentsafety import ContentSafetyClient # Import untuk Content Safety
+from azure.core.credentials import AzureKeyCredential # Import untuk Content Safety
 
 # Helper untuk mapping bahasa (bisa diperluas)
 LANGUAGE_FULL_NAMES = {
@@ -15,6 +18,23 @@ LANGUAGE_FULL_NAMES = {
 }
 
 DEFAULT_PROFICIENCY = "intermediate"
+CONTENT_SAFETY_TEXT_THRESHOLD = 1 # Threshold untuk content safety text analysis
+
+# Inisialisasi Content Safety Client di luar fungsi main agar bisa di-reuse
+# atau Anda bisa membuatnya sebagai singleton/dependency injection jika menggunakan framework
+content_safety_client = None
+try:
+    CONTENT_SAFETY_ENDPOINT = os.environ.get("CONTENT_SAFETY_ENDPOINT")
+    CONTENT_SAFETY_KEY = os.environ.get("CONTENT_SAFETY_KEY")
+    if CONTENT_SAFETY_ENDPOINT and CONTENT_SAFETY_KEY:
+        content_safety_client = ContentSafetyClient(CONTENT_SAFETY_ENDPOINT, AzureKeyCredential(CONTENT_SAFETY_KEY))
+        logging.info("ContentSafetyClient initialized successfully.")
+    else:
+        logging.warning("Content Safety Endpoint or Key is not configured. Text safety checks will be skipped.")
+except Exception as cs_init_err:
+    logging.error(f"Error initializing ContentSafetyClient: {cs_init_err}", exc_info=True)
+    content_safety_client = None
+
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request for GenerateSituationalLesson.')
@@ -54,6 +74,40 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                 mimetype="application/json", status_code=400
             )
 
+        # Content Safety Check untuk Input scenarioDescription
+        if content_safety_client and scenario_description:
+            try:
+                logging.info(f"Performing content safety analysis on scenarioDescription: '{scenario_description[:100]}...'")
+                analyze_text_request = AnalyzeTextOptions(
+                    text=scenario_description,
+                    categories=[TextCategory.SEXUAL, TextCategory.VIOLENCE, TextCategory.HATE, TextCategory.SELF_HARM]
+                )
+                response_text_safety = content_safety_client.analyze_text(analyze_text_request)
+
+                blocked_input_categories = []
+                if response_text_safety and hasattr(response_text_safety, 'categories_analysis'):
+                    for category_result in response_text_safety.categories_analysis:
+                        if category_result.severity >= CONTENT_SAFETY_TEXT_THRESHOLD:
+                            blocked_input_categories.append(f"{category_result.category.value if hasattr(category_result.category, 'value') else category_result.category} (Score: {category_result.severity})")
+                
+                if blocked_input_categories:
+                    logging.warning(f"Input scenarioDescription blocked by Content Safety. Categories: {', '.join(blocked_input_categories)}")
+                    return func.HttpResponse(
+                        json.dumps({"error": "Input scenario description contains inappropriate content.", "details": f"Blocked categories: {', '.join(blocked_input_categories)}"}),
+                        mimetype="application/json",
+                        status_code=400
+                    )
+                logging.info("Input scenarioDescription passed content safety check.")
+            except Exception as text_safety_err:
+                logging.error(f"Error during text content safety analysis for input: {text_safety_err}", exc_info=True)
+                # Jika safety check gagal, putuskan apakah akan melanjutkan atau mengembalikan error
+                # Untuk keamanan, lebih baik kembalikan error
+                return func.HttpResponse(
+                    json.dumps({"error": "Failed to verify safety of input scenario description."}),
+                    mimetype="application/json",
+                    status_code=500 
+                )
+
         learning_lang_name = LANGUAGE_FULL_NAMES.get(learning_lang_code, "English")
         native_lang_name = LANGUAGE_FULL_NAMES.get(native_lang_code, "Indonesian")
 
@@ -88,10 +142,12 @@ The user wants to learn {learning_lang_name} (target language, code: '{learning_
 Their native language is {native_lang_name} (source language, code: '{native_lang_code}').
 Their current proficiency level in {learning_lang_name} is '{proficiency_level}'.
 Adjust the complexity and depth of the content according to this proficiency level. For beginners, use simpler words and basic grammar. For advanced, use more nuanced vocabulary and complex structures.
+Ensure all generated content is strictly appropriate for young children, avoiding any mature themes, violence, profanity, hate speech, or self-harm references.
+The content should be positive, educational, and encouraging.
 {json_schema_instruction}
 """
         
-        user_message_content = f"Generate learning material for the following scenario: \"{scenario_description}\""
+        user_message_content = f'Generate learning material for the following scenario: "{scenario_description}"'
 
         messages_payload = [
             {"role": "system", "content": system_message_content},
@@ -133,7 +189,65 @@ Adjust the complexity and depth of the content according to this proficiency lev
                     
                     parsed_json = json.loads(json_output_str.strip()) # Penting
                     logging.info("Respon JSON dari OpenAI berhasil di-parse untuk pelajaran situasional.")
+
+                    # Content Safety Check untuk Output dari Azure OpenAI
+                    if content_safety_client:
+                        try:
+                            texts_to_check = []
+                            # Kumpulkan semua string dari output JSON
+                            if "scenarioTitle" in parsed_json and isinstance(parsed_json["scenarioTitle"], dict):
+                                texts_to_check.extend(str(v) for v in parsed_json["scenarioTitle"].values() if isinstance(v, (str, int, float)))
+                            if "vocabulary" in parsed_json and isinstance(parsed_json["vocabulary"], list):
+                                for item in parsed_json["vocabulary"]:
+                                    if isinstance(item, dict) and "term" in item and isinstance(item["term"], dict):
+                                        texts_to_check.extend(str(v) for v in item["term"].values() if isinstance(v, (str, int, float)))
+                            if "keyPhrases" in parsed_json and isinstance(parsed_json["keyPhrases"], list):
+                                for item in parsed_json["keyPhrases"]:
+                                    if isinstance(item, dict) and "phrase" in item and isinstance(item["phrase"], dict):
+                                        texts_to_check.extend(str(v) for v in item["phrase"].values() if isinstance(v, (str, int, float)))
+                            if "grammarTips" in parsed_json and isinstance(parsed_json["grammarTips"], list):
+                                for item in parsed_json["grammarTips"]:
+                                    if isinstance(item, dict):
+                                        if "tip" in item and isinstance(item["tip"], dict):
+                                            texts_to_check.extend(str(v) for v in item["tip"].values() if isinstance(v, (str, int, float)))
+                                        if "example" in item and isinstance(item["example"], dict):
+                                            texts_to_check.extend(str(v) for v in item["example"].values() if isinstance(v, (str, int, float)))
+                            
+                            combined_text_output = " . ".join(filter(None, texts_to_check))
+
+                            if combined_text_output:
+                                logging.info(f"Performing content safety analysis on generated lesson output (length: {len(combined_text_output)})...")
+                                analyze_output_request = AnalyzeTextOptions(
+                                    text=combined_text_output,
+                                    categories=[TextCategory.SEXUAL, TextCategory.VIOLENCE, TextCategory.HATE, TextCategory.SELF_HARM]
+                                )
+                                response_output_safety = content_safety_client.analyze_text(analyze_output_request)
+                                
+                                blocked_output_categories = []
+                                if response_output_safety and hasattr(response_output_safety, 'categories_analysis'):
+                                    for category_result in response_output_safety.categories_analysis:
+                                        if category_result.severity >= CONTENT_SAFETY_TEXT_THRESHOLD:
+                                            blocked_output_categories.append(f"{category_result.category.value if hasattr(category_result.category, 'value') else category_result.category} (Score: {category_result.severity})")
+
+                                if blocked_output_categories:
+                                    logging.warning(f"Generated lesson content blocked by Content Safety. Categories: {', '.join(blocked_output_categories)}")
+                                    logging.warning(f"Blocked content (first 500 chars): {combined_text_output[:500]}")
+                                    return func.HttpResponse(
+                                        json.dumps({"error": "Generated lesson content was found to be inappropriate and has been blocked."}),
+                                        mimetype="application/json",
+                                        status_code=500 
+                                    )
+                                logging.info("Generated lesson content passed content safety check.")
+                        except Exception as output_safety_err:
+                            logging.error(f"Error during content safety analysis for generated output: {output_safety_err}", exc_info=True)
+                            # Jika safety check gagal, lebih baik blokir output
+                            return func.HttpResponse(
+                                json.dumps({"error": "Failed to verify safety of generated content."}),
+                                mimetype="application/json",
+                                status_code=500
+                            )
                     
+                    # Jika lolos, kembalikan parsed_json
                     return func.HttpResponse(
                         body=json.dumps(parsed_json),
                         mimetype="application/json",

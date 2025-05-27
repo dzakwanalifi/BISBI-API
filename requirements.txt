@@ -6,3 +6,4 @@ azure-cognitiveservices-speech
 python-dotenv
 huggingface_hub>=0.20.3
 pillow
+azure-ai-contentsafety>=0.1.0b2 # Atau versi stabil terbaru (cek PyPI)
