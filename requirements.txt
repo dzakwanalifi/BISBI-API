@@ -4,3 +4,5 @@ azure-core
 openai>=1.0.0
 azure-cognitiveservices-speech
 python-dotenv
+huggingface_hub>=0.20.3
+pillow
