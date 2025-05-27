@@ -16,8 +16,18 @@ LANGUAGE_FULL_NAMES = {
 
 DEFAULT_PROFICIENCY = "intermediate"
 
-def main(req: func.HttpRequest) -> func.HttpResponse:
-    logging.info('Python HTTP trigger function processed a request for GenerateSituationalLesson.')
+# UBAH DEFINISI FUNGSI main UNTUK MENERIMA user_id dari kwargs (atau sebagai parameter)
+def main(req: func.HttpRequest) -> func.HttpResponse: # Tambahkan user_id opsional
+    user_id = getattr(req, 'user_id_injected', None) # Retrieve user_id from req
+
+    # Jika user_id tidak None, berarti sudah diautentikasi oleh decorator di routes.py
+    if user_id:
+        logging.info(f'Python HTTP trigger function processed a request for GenerateLesson by user {user_id}.')
+    else:
+        # Ini seharusnya tidak terjadi jika decorator diterapkan dengan benar di routes.py
+        logging.warning('GenerateLesson accessed without user_id. Auth might not be applied.')
+        # Anda bisa memutuskan untuk mengembalikan error di sini jika user_id wajib
+        # return func.HttpResponse("Authentication required.", status_code=401)
 
     try:
         # 1. Ambil konfigurasi Azure OpenAI dari environment variables
@@ -56,6 +66,14 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
         learning_lang_name = LANGUAGE_FULL_NAMES.get(learning_lang_code, "English")
         native_lang_name = LANGUAGE_FULL_NAMES.get(native_lang_code, "Indonesian")
+
+        # --- CONTOH PENGGUNAAN user_id (JIKA PERLU) ---
+        # Misalnya, jika Anda ingin menyimpan riwayat pelajaran yang digenerate untuk pengguna ini:
+        if user_id:
+            logging.info(f"User {user_id} requested a lesson for scenario: '{scenario_description}'")
+        # Nanti setelah pelajaran berhasil digenerate, Anda bisa panggil fungsi untuk menyimpan
+        # save_lesson_history(user_id, scenario_description, generated_lesson_json)
+        # --- AKHIR CONTOH PENGGUNAAN user_id ---
 
         # 3. Inisialisasi klien Azure OpenAI
         client = AzureOpenAI(
@@ -134,6 +152,24 @@ Adjust the complexity and depth of the content according to this proficiency lev
                     parsed_json = json.loads(json_output_str.strip()) # Penting
                     logging.info("Respon JSON dari OpenAI berhasil di-parse untuk pelajaran situasional.")
                     
+                    # --- CONTOH PENYIMPANAN RIWAYAT (JIKA PERLU) ---
+                    if user_id: # Pastikan user_id ada
+                        logging.info(f"Lesson generation history can be saved for user {user_id}")
+                    #   from ..shared_code import lesson_history_db # Asumsi ada modul untuk interaksi DB
+                    #   try:
+                    #       lesson_history_db.save_lesson_attempt(
+                    #           user_id=user_id,
+                    #           scenario_description=scenario_description,
+                    #           learning_language_code=learning_lang_code,
+                    #           native_language_code=native_lang_code,
+                    #           proficiency_level=proficiency_level,
+                    #           generated_lesson_json=parsed_json # atau bagian pentingnya
+                    #       )
+                    #       logging.info(f"Lesson generation history saved for user {user_id}")
+                    #   except Exception as db_error:
+                    #       logging.error(f"Failed to save lesson history for user {user_id}: {db_error}")
+                    # --- AKHIR CONTOH PENYIMPANAN RIWAYAT ---
+
                     return func.HttpResponse(
                         body=json.dumps(parsed_json),
                         mimetype="application/json",
@@ -160,6 +196,14 @@ Adjust the complexity and depth of the content according to this proficiency lev
             )
 
     except Exception as e:
+        # if isinstance(e, AuthError):
+        #     logging.error(f"AuthError in GenerateLesson main: {e.error}")
+        #     return func.HttpResponse(
+        #         json.dumps(e.error),
+        #         status_code=e.status_code,
+        #         mimetype="application/json"
+        #     )
+        
         logging.error(f"Terjadi kesalahan internal di GenerateLesson: {str(e)}")
         import traceback
         logging.error(traceback.format_exc())

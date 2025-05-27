@@ -4,3 +4,6 @@ azure-core
 openai>=1.0.0
 azure-cognitiveservices-speech
 python-dotenv 
+PyJWT
+cryptography
+requests
