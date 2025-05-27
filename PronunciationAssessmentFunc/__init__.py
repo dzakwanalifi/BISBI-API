@@ -1,7 +1,6 @@
 import logging
 import os
 import json
-# Hapus tempfile jika tidak digunakan lagi untuk opsi ini
 import azure.functions as func
 import azure.cognitiveservices.speech as speechsdk
 
@@ -21,9 +20,9 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
         audio_file_from_req = req.files.get('audio')
         reference_text = req.form.get('referenceText')
-        language_code = req.form.get('languageCode', 'en-US')
+        language_code = req.form.get('languageCode', 'en-US') # Default ke en-US
         grading_system_str = req.form.get('gradingSystem', 'HundredMark')
-        granularity_str = req.form.get('granularity', 'Phoneme')
+        granularity_str = req.form.get('granularity', 'Phoneme') # Default ke Phoneme untuk eksperimen
 
         if not audio_file_from_req or not reference_text:
             # ... (error handling) ...
@@ -94,8 +93,8 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         if result.reason == speechsdk.ResultReason.RecognizedSpeech:
             logging.info(f"Teks dikenali: {result.text}")
             pronunciation_result_json_str = result.properties.get(speechsdk.PropertyId.SpeechServiceResponse_JsonResult)
-            # logging.info(f"JSON Mentah dari SpeechServiceResponse: {pronunciation_result_json_str}")
-            if pronunciation_result_json_str:
+            if pronunciation_result_json_str: # Tambahkan cek ini untuk memastikan string tidak None
+                logging.info(f"RAW PRONUNCIATION JSON: {pronunciation_result_json_str}") # Log ini untuk analisis
                 pronunciation_details = json.loads(pronunciation_result_json_str)
                 logging.info("Berhasil mendapatkan detail penilaian pelafalan.")
                 # logging.info(f"JSON Mentah Parsed: {json.dumps(pronunciation_details, indent=2)}") # Log JSON yang sudah diparsing untuk verifikasi                # Inisialisasi response_data
@@ -162,7 +161,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                     status_code=200
                 )
             else:
-                logging.error("Tidak ada detail JSON penilaian pelafalan dalam respons.")
+                logging.error(f"Tidak ada detail JSON penilaian pelafalan dalam respons. Result reason: {result.reason}, Result text: {result.text}")
                 response_data = {"error": "Gagal mendapatkan detail penilaian dari layanan."}
                 return func.HttpResponse(
                     json.dumps(response_data),
