@@ -28,17 +28,17 @@ BISBI AI bertujuan untuk memberdayakan pemuda Indonesia, khususnya rentang usia 
 
 ## 2. Arsitektur Backend
 
-*   **Platform:** Azure Functions (Serverless, Python)
-*   **Layanan AI Utama (Microsoft Azure):**
-    *   **Azure AI Vision:** Digunakan untuk deteksi objek pada fitur BISBI Pindai.
-    *   **Azure OpenAI Service (Model GPT-4 Series atau setara):**
-        *   Untuk analisis gambar objek dan generasi teks deskriptif bilingual pada fitur BISBI Pindai.
-        *   Untuk generasi konten pelajaran situasional dinamis pada fitur BISBI Situasi.
-    *   **Azure AI Speech:**
-        *   Text-to-Speech (TTS) untuk generasi output audio pada fitur BISBI Dengar dan bagian lain aplikasi.
-        *   Pronunciation Assessment untuk analisis dan umpan balik pelafalan pada fitur BISBI Lafal.
-*   **Konfigurasi & Rahasia:** Dikelola melalui Application Settings di Azure Function App (yang dapat diintegrasikan dengan Azure Key Vault untuk keamanan lebih lanjut di lingkungan produksi).
-*   **Monitoring:** Azure Application Insights.
+-   **Platform:** Azure Functions (Serverless, Python)
+-   **Layanan AI Utama:**
+    -   **Hugging Face Inference API (Model facebook/detr-resnet-50 atau serupa):** Digunakan untuk deteksi objek pada fitur BISBI Pindai. Dijalankan melalui provider "hf-inference" dengan model Pay-As-You-Go.
+    -   **Azure OpenAI Service (Model GPT-4 Series atau setara):**
+        -   Untuk analisis gambar objek dan generasi teks deskriptif bilingual pada fitur BISBI Pindai (setelah objek dideteksi).
+        -   Untuk generasi konten pelajaran situasional dinamis pada fitur BISBI Situasi.
+    -   **Azure AI Speech:**
+        -   Text-to-Speech (TTS) untuk generasi output audio pada fitur BISBI Dengar dan bagian lain aplikasi.
+        -   Pronunciation Assessment untuk analisis dan umpan balik pelafalan pada fitur BISBI Lafal.
+-   **Konfigurasi & Rahasia:** Dikelola melalui Application Settings di Azure Function App (yang dapat diintegrasikan dengan Azure Key Vault untuk keamanan lebih lanjut di lingkungan produksi). Ini termasuk HF_API_TOKEN untuk akses ke Hugging Face API.
+-   **Monitoring:** Azure Application Insights.
 
 ## 3. Prasyarat Penggunaan API
 
@@ -87,15 +87,16 @@ Menyediakan status dasar API, versi, dan pesan selamat datang.
 
 ### 4.2 Deteksi Objek Visual (BISBI Pindai - Backend)
 
-Menerima gambar dan mengembalikan daftar objek yang terdeteksi beserta bounding box-nya.
+Menerima gambar dan mengembalikan daftar objek yang terdeteksi beserta bounding box-nya. Fungsionalitas ini ditenagai oleh model deteksi objek dari Hugging Face (misalnya, facebook/detr-resnet-50) yang diakses melalui Inference API mereka.
 
-*   **URL:** `/DetectObjectsVisual`
-*   **URL Lengkap (Contoh dengan Kunci):** `https://bisbi-api.azurewebsites.net/api/DetectObjectsVisual?code=NILAI_KUNCI_ANDA`
-*   **Metode:** `POST`
-*   **Otorisasi:** `Function` (Memerlukan kunci)
-*   **Request Body:** `multipart/form-data`
-    *   **Field:** `image` (file: JPEG, PNG, dll.)
-*   **Respons Sukses (200 OK):**
+-   **URL:** `/DetectObjectsVisual`
+-   **URL Lengkap (Contoh dengan Kunci):** `https://bisbi-api.azurewebsites.net/api/DetectObjectsVisual?code=NILAI_KUNCI_ANDA`
+-   **Metode:** `POST`
+-   **Otorisasi:** `Function` (Memerlukan kunci)
+-   **Request Body:** `multipart/form-data`
+    -   **Field:** `image` (file: JPEG, PNG, dll.)
+-   **Respons Sukses (200 OK):**
+
     ```json
     [
       {
@@ -105,6 +106,7 @@ Menerima gambar dan mengembalikan daftar objek yang terdeteksi beserta bounding 
       }
     ]
     ```
+    *Catatan: Akurasi dan label objectName akan bergantung pada model yang digunakan di backend Hugging Face.*
 
 ### 4.3 Dapatkan Detail Objek Visual dengan OpenAI (BISBI Pindai - Backend)
 
