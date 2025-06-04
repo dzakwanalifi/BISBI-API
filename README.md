@@ -1,12 +1,12 @@
-# BISBI AI - API Backend
+# BISBI - API Backend
 
-Selamat datang di dokumentasi API Backend untuk BISBI AI (Bisa Bahasa Inggris AI), sebuah aplikasi pembelajaran bahasa Inggris berbasis kecerdasan buatan (AI) yang dirancang khusus untuk memberdayakan pemuda Indonesia. API ini menyediakan fungsionalitas inti yang ditenagai oleh layanan Microsoft Azure AI untuk mendukung pengalaman belajar yang interaktif, personal, dan kontekstual.
+Selamat datang di dokumentasi API Backend untuk BISBI (Bisa Bahasa Inggris AI), sebuah aplikasi pembelajaran bahasa Inggris berbasis kecerdasan buatan (AI) yang dirancang khusus untuk memberdayakan pemuda Indonesia. API ini menyediakan fungsionalitas inti yang ditenagai oleh layanan Microsoft Azure AI untuk mendukung pengalaman belajar yang interaktif, personal, dan kontekstual.
 
 **API ini telah di-deploy dan dapat diakses melalui Azure Function App.**
 
 ## Daftar Isi
 
-- [BISBI AI - API Backend](#bisbi-ai---api-backend)
+- [BISBI - API Backend](#bisbi-ai---api-backend)
   - [Daftar Isi](#daftar-isi)
   - [1. Deskripsi Proyek](#1-deskripsi-proyek)
   - [2. Arsitektur Backend](#2-arsitektur-backend)
@@ -24,7 +24,7 @@ Selamat datang di dokumentasi API Backend untuk BISBI AI (Bisa Bahasa Inggris AI
 
 ## 1. Deskripsi Proyek
 
-BISBI AI bertujuan untuk memberdayakan pemuda Indonesia, khususnya rentang usia 17-25 tahun, dengan keterampilan komunikasi bahasa Inggris yang praktis, kontekstual, dan hiper-personalisasi. Backend API ini mendukung fitur-fitur unggulan aplikasi BISBI AI seperti Kamus Visual Interaktif (BISBI Pindai), Pelajaran Situasional Dinamis (BISBI Situasi), output audio untuk pendengaran (BISBI Dengar), dan umpan balik pelafalan mendetail (BISBI Lafal).
+BISBI bertujuan untuk memberdayakan pemuda Indonesia, khususnya rentang usia 17-25 tahun, dengan keterampilan komunikasi bahasa Inggris yang praktis, kontekstual, dan hiper-personalisasi. Backend API ini mendukung fitur-fitur unggulan aplikasi BISBI seperti Kamus Visual Interaktif (BISBI Pindai), Pelajaran Situasional Dinamis (BISBI Situasi), output audio untuk pendengaran (BISBI Dengar), dan umpan balik pelafalan mendetail (BISBI Lafal).
 
 ## 2. Arsitektur Backend
 
@@ -84,7 +84,7 @@ Menyediakan status dasar API, versi, dan pesan selamat datang.
     ```json
     {
       "status": "healthy",
-      "message": "Welcome to BISBI AI API! All systems operational.",
+      "message": "Welcome to BISBI API! All systems operational.",
       "version": "0.1.0-mvp",
       "timestamp": "2024-05-25T18:00:00Z",
       "documentation": "https://github.com/dzakwanalifi/BISBI-API/blob/master/README.md"
@@ -250,7 +250,7 @@ Menerima teks dan mengembalikan data audio MP3.
 
     ```json
     {
-      "text": "Welcome to BISBI AI learning application.",
+      "text": "Welcome to BISBI learning application.",
       "languageCode": "en-US",
       "voiceName": "en-US-AvaMultilingualNeural" 
     }
@@ -372,7 +372,7 @@ Struktur JSON respons detail telah dijelaskan untuk setiap endpoint yang mengemb
 
 ## 7. Catatan Tambahan
 
--   **Status Proyek:** Backend ini aktif dikembangkan sebagai bagian dari Minimum Viable Product (MVP) BISBI AI.
+-   **Status Proyek:** Backend ini aktif dikembangkan sebagai bagian dari Minimum Viable Product (MVP) BISBI.
 -   **Keamanan Berlapis:**
     -   API ini menerapkan keamanan berlapis menggunakan Azure AI Content Safety untuk analisis gambar dan teks pada input pengguna dan output dari model AI.
     -   Threshold sensitivitas diatur tinggi (skor rendah) untuk memaksimalkan keamanan bagi pengguna anak-anak.
